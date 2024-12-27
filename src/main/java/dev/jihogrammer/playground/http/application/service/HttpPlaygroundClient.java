@@ -6,11 +6,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
+import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 @Slf4j
-class HttpPlaygroundClient implements HttpSender, AutoCloseable {
+class HttpPlaygroundClient implements HttpSender<Void>, AutoCloseable {
 
     private final HttpClient httpClient;
 
@@ -19,16 +21,42 @@ class HttpPlaygroundClient implements HttpSender, AutoCloseable {
     @Override
     public void send(final HttpPlaygroundRequest hgRequest) {
         try {
-            var response = this.httpClient.send(hgRequest.toHttpRequest(), bodyHandler);
-
-            log.info("statusCode: {}", response.statusCode());
-            log.info("request uri: {}", hgRequest.uri());
-            log.info("request headers: {}", hgRequest.headers());
-            log.info("response headers: {}", response.headers());
-            log.info("response body: {}", response.body());
+            this.sendAsync(hgRequest).join();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public CompletableFuture<Void> sendAsync(final HttpPlaygroundRequest hgRequest) {
+        try {
+            return this.httpClient.sendAsync(hgRequest.getHttpRequest(), bodyHandler)
+                    .thenAccept(response -> this.log(hgRequest, response));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void log(final HttpPlaygroundRequest hgRequest, final HttpResponse<String> response) {
+        log.info("\n>>> REQUEST\n{} {}\n{}",
+                hgRequest.method(),
+                hgRequest.uri(),
+                this.parseHeaders(hgRequest.headers()));
+        log.info("\n>>> RESPONSE\n{}\n{}",
+                this.parseHeaders(response.headers()),
+                response.body());
+    }
+
+    private StringBuilder parseHeaders(final HttpHeaders headers) {
+        var sb = new StringBuilder();
+
+        for (var k : headers.map().keySet()) {
+            for (var v : headers.map().get(k)) {
+                sb.append(k).append(": ").append(v).append('\n');
+            }
+        }
+
+        return sb;
     }
 
     @Override

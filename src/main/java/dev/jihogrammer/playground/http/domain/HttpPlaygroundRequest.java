@@ -4,7 +4,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,8 +39,12 @@ public class HttpPlaygroundRequest {
         return new Builder(HttpMethod.DELETE, url);
     }
 
-    public HttpRequest toHttpRequest() {
+    public HttpRequest getHttpRequest() {
         return this.request;
+    }
+
+    public String method() {
+        return this.request.method();
     }
 
     public URI uri() {
@@ -55,9 +61,9 @@ public class HttpPlaygroundRequest {
 
         private final String url;
 
-        private final Collection<Pair> headers;
+        private final Set<Pair> headers;
 
-        private final Collection<Pair> queryParams;
+        private final Set<Pair> queryParams;
 
         private String body;
 
@@ -122,9 +128,9 @@ public class HttpPlaygroundRequest {
         private URI uri() {
             try {
                 if (this.queryParams == null || this.queryParams.isEmpty()) {
-                    return new URI(url);
+                    return new URI(this.url);
                 } else {
-                    return new URI(String.join("?", url, this.queryString()));
+                    return new URI(String.join("?", this.url, this.queryString()));
                 }
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);

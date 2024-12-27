@@ -1,8 +1,8 @@
 package dev.jihogrammer.playground.http.application.service;
 
 import dev.jihogrammer.playground.http.domain.HttpPlaygroundRequest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpClient;
@@ -11,26 +11,30 @@ import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 class HttpPlaygroundClientTest {
 
-    HttpPlaygroundClient client;
+    static HttpPlaygroundClient client;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeAll
+    static void setUpClass() {
+        System.setProperty("jdk.httpclient.keepAlive.timeout", "99999");
         var httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.of(30, ChronoUnit.SECONDS))
+                .executor(Executors.newFixedThreadPool(5))
                 .build();
         var bodyHandler = HttpResponse.BodyHandlers.ofString(Charset.defaultCharset());
 
-        this.client = new HttpPlaygroundClient(httpClient, bodyHandler);
+        client = new HttpPlaygroundClient(httpClient, bodyHandler);
     }
 
-    @AfterEach
-    void tearDown() {
-        this.client.close();
+    @AfterAll
+    static void tearDownClass() {
+        client.close();
     }
 
     @Test
@@ -41,7 +45,7 @@ class HttpPlaygroundClientTest {
                 .build();
 
         // then
-        assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
+        assertThatCode(() -> client.send(hgRequest)).doesNotThrowAnyException();
     }
 
     @Test
@@ -52,7 +56,7 @@ class HttpPlaygroundClientTest {
                 .build();
 
         // then
-        assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
+        assertThatCode(() -> client.send(hgRequest)).doesNotThrowAnyException();
     }
 
     @Test
@@ -63,7 +67,7 @@ class HttpPlaygroundClientTest {
                 .build();
 
         // then
-        assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
+        assertThatCode(() -> client.send(hgRequest)).doesNotThrowAnyException();
     }
 
     @Test
@@ -72,7 +76,27 @@ class HttpPlaygroundClientTest {
         var hgRequest = HttpPlaygroundRequest.delete("https://www.google.com/search").build();
 
         // then
-        assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
+        assertThatCode(() -> client.send(hgRequest)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void sendAsync() {
+        // given
+        var a = HttpPlaygroundRequest.get("https://www.google.com").build();
+        var b = HttpPlaygroundRequest.post("https://www.naver.com").build();
+        var c = HttpPlaygroundRequest.put("https://www.chatgpt.com").build();
+        var d = HttpPlaygroundRequest.delete("https://www.github.com").build();
+
+        // when
+        var futures = CompletableFuture.allOf(
+                client.sendAsync(a),
+                client.sendAsync(b),
+                client.sendAsync(c),
+                client.sendAsync(d)
+        );
+
+        // then
+        assertThatCode(futures::join).doesNotThrowAnyException();
     }
 
 }

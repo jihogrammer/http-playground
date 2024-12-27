@@ -2,8 +2,12 @@ package dev.jihogrammer.playground.http.application.port.in;
 
 import dev.jihogrammer.playground.http.domain.HttpPlaygroundRequest;
 
-public interface HttpSender {
+import java.util.concurrent.CompletableFuture;
+
+public interface HttpSender<T> {
 
     void send(HttpPlaygroundRequest hgRequest);
+
+    CompletableFuture<T> sendAsync(HttpPlaygroundRequest hgRequest);
 
 }
