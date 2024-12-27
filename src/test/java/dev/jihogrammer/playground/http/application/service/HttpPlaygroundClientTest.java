@@ -1,6 +1,7 @@
 package dev.jihogrammer.playground.http.application.service;
 
 import dev.jihogrammer.playground.http.domain.HttpMethod;
+import dev.jihogrammer.playground.http.domain.HttpPlaygroundRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,42 +38,61 @@ class HttpPlaygroundClientTest {
     @Test
     void getGoogle() {
         // given
-        var url = "https://www.google.com/search";
-        var queryParams = Map.of("q", List.of("hello+world"));
+        var hgRequest = new HttpPlaygroundRequest(
+                HttpMethod.GET,
+                "https://www.google.com/search",
+                null,
+                Map.of("q", List.of("hello+world")),
+                null
+        );
 
         // then
-        assertThatCode(() -> this.client.send(HttpMethod.GET, url, null, queryParams, null))
-                .doesNotThrowAnyException();
+        assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
     }
 
     @Test
     void postGoogle() {
         // given
-        var url = "https://www.google.com/search";
+        var hgRequest = new HttpPlaygroundRequest(
+                HttpMethod.POST,
+                "https://www.google.com/search",
+                null,
+                null,
+                ""
+        );
 
         // then
-        assertThatCode(() -> this.client.send(HttpMethod.POST, url, null, null, ""))
-                .doesNotThrowAnyException();
+        assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
     }
 
     @Test
     void putGoogle() {
         // given
-        var url = "https://www.google.com/search";
+        var hgRequest = new HttpPlaygroundRequest(
+                HttpMethod.PUT,
+                "https://www.google.com/search",
+                null,
+                null,
+                ""
+        );
 
         // then
-        assertThatCode(() -> this.client.send(HttpMethod.PUT, url, null, null, ""))
-                .doesNotThrowAnyException();
+        assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
     }
 
     @Test
     void deleteGoogle() {
         // given
-        var url = "https://www.google.com/search";
+        var hgRequest = new HttpPlaygroundRequest(
+                HttpMethod.DELETE,
+                "https://www.google.com/search",
+                null,
+                null,
+                null
+        );
 
         // then
-        assertThatCode(() -> this.client.send(HttpMethod.DELETE, url, null, null, null))
-                .doesNotThrowAnyException();
+        assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
     }
 
 }
