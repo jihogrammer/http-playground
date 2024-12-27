@@ -23,21 +23,26 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 class HttpPlaygroundClient implements HttpSender {
 
-    private final Charset charset;
+    private final HttpClient httpClient;
+
+    private final HttpResponse.BodyHandler<String> bodyHandler;
 
     @Override
     public void send(String url, Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
-        try (var client = HttpClient.newBuilder().build()) {
-            var httpRequest = HttpRequest.newBuilder()
+        try {
+            var request = HttpRequest.newBuilder()
                     .GET()
                     .uri(this.convertToURI(url, queryParams))
                     .headers(this.convertToHeaderArray(headers))
                     .build();
 
-            var response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString(this.charset));
+            var response = this.httpClient.send(request, bodyHandler);
 
             log.info("statusCode: {}", response.statusCode());
-            log.info("body: {}", response.body());
+            log.info("request uri: {}", request.uri());
+            log.info("request headers: {}", request.headers());
+            log.info("response headers: {}", response.headers());
+            log.info("response body: {}", response.body());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -73,6 +78,10 @@ class HttpPlaygroundClient implements HttpSender {
 
             return new URI(url + '?' + queryString);
         }
+    }
+
+    void close() {
+        this.httpClient.close();
     }
 
 }
