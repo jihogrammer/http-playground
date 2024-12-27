@@ -1,6 +1,5 @@
 package dev.jihogrammer.playground.http.application.service;
 
-import dev.jihogrammer.playground.http.domain.HttpMethod;
 import dev.jihogrammer.playground.http.domain.HttpPlaygroundRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,8 +10,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
@@ -38,13 +36,9 @@ class HttpPlaygroundClientTest {
     @Test
     void getGoogle() {
         // given
-        var hgRequest = new HttpPlaygroundRequest(
-                HttpMethod.GET,
-                "https://www.google.com/search",
-                null,
-                Map.of("q", List.of("hello+world")),
-                null
-        );
+        var hgRequest = HttpPlaygroundRequest.get("https://www.google.com/search")
+                .queryParam("q", "hello+world")
+                .build();
 
         // then
         assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
@@ -53,13 +47,9 @@ class HttpPlaygroundClientTest {
     @Test
     void postGoogle() {
         // given
-        var hgRequest = new HttpPlaygroundRequest(
-                HttpMethod.POST,
-                "https://www.google.com/search",
-                null,
-                null,
-                ""
-        );
+        var hgRequest = HttpPlaygroundRequest.post("https://www.google.com/search")
+                .body("{\"hello\": \"world\"}")
+                .build();
 
         // then
         assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
@@ -68,13 +58,9 @@ class HttpPlaygroundClientTest {
     @Test
     void putGoogle() {
         // given
-        var hgRequest = new HttpPlaygroundRequest(
-                HttpMethod.PUT,
-                "https://www.google.com/search",
-                null,
-                null,
-                ""
-        );
+        var hgRequest = HttpPlaygroundRequest.put("https://www.google.com/search")
+                .header("X-Request-ID", UUID.randomUUID() + "@TEST")
+                .build();
 
         // then
         assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();
@@ -83,13 +69,7 @@ class HttpPlaygroundClientTest {
     @Test
     void deleteGoogle() {
         // given
-        var hgRequest = new HttpPlaygroundRequest(
-                HttpMethod.DELETE,
-                "https://www.google.com/search",
-                null,
-                null,
-                null
-        );
+        var hgRequest = HttpPlaygroundRequest.delete("https://www.google.com/search").build();
 
         // then
         assertThatCode(() -> this.client.send(hgRequest)).doesNotThrowAnyException();

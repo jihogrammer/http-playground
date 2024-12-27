@@ -10,7 +10,7 @@ import java.net.http.HttpResponse;
 
 @RequiredArgsConstructor
 @Slf4j
-class HttpPlaygroundClient implements HttpSender {
+class HttpPlaygroundClient implements HttpSender, AutoCloseable {
 
     private final HttpClient httpClient;
 
@@ -31,7 +31,8 @@ class HttpPlaygroundClient implements HttpSender {
         }
     }
 
-    void close() {
+    @Override
+    public void close() {
         this.httpClient.close();
     }
 
