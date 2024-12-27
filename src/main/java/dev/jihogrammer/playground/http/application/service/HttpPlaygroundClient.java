@@ -1,6 +1,7 @@
 package dev.jihogrammer.playground.http.application.service;
 
 import dev.jihogrammer.playground.http.application.port.in.HttpSender;
+import dev.jihogrammer.playground.http.domain.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -9,7 +10,6 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,13 +28,21 @@ class HttpPlaygroundClient implements HttpSender {
     private final HttpResponse.BodyHandler<String> bodyHandler;
 
     @Override
-    public void send(String url, Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
+    public void send(HttpMethod method, String url, Map<String, List<String>> headers, Map<String, List<String>> queryParams, String body) {
         try {
-            var request = HttpRequest.newBuilder()
-                    .GET()
+            requireNonNull(method);
+
+            var requestBuilder = HttpRequest.newBuilder()
                     .uri(this.convertToURI(url, queryParams))
                     .headers(this.convertToHeaderArray(headers))
-                    .build();
+                    ;
+
+            var request = switch (method) {
+                case GET -> requestBuilder.GET().build();
+                case POST -> requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body)).build();
+                case PUT -> requestBuilder.PUT(HttpRequest.BodyPublishers.ofString(body)).build();
+                case DELETE -> requestBuilder.DELETE().build();
+            };
 
             var response = this.httpClient.send(request, bodyHandler);
 
