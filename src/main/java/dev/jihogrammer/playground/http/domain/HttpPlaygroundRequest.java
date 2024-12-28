@@ -16,11 +16,14 @@ public class HttpPlaygroundRequest {
 
     private final HttpRequest request;
 
-    private HttpPlaygroundRequest(final HttpRequest request) {
+    private final String body;
+
+    private HttpPlaygroundRequest(final HttpRequest request, final String body) {
         if (request == null) {
             throw new IllegalArgumentException("request is null.");
         }
         this.request = request;
+        this.body = body;
     }
 
     public static Builder get(final String url) {
@@ -53,6 +56,10 @@ public class HttpPlaygroundRequest {
 
     public HttpHeaders headers() {
         return this.request.headers();
+    }
+
+    public String body() {
+        return this.body;
     }
 
     public static class Builder {
@@ -88,7 +95,7 @@ public class HttpPlaygroundRequest {
                 throw new IllegalArgumentException("url is blank.");
             }
 
-            return new HttpPlaygroundRequest(this.request());
+            return new HttpPlaygroundRequest(this.request(), this.body);
         }
 
         public Builder header(final String key, final String value) {

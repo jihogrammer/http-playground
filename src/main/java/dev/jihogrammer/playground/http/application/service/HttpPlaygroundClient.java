@@ -31,20 +31,17 @@ class HttpPlaygroundClient implements HttpSender<Void>, AutoCloseable {
     public CompletableFuture<Void> sendAsync(final HttpPlaygroundRequest hgRequest) {
         try {
             return this.httpClient.sendAsync(hgRequest.getHttpRequest(), bodyHandler)
-                    .thenAccept(response -> this.log(hgRequest, response));
+                    .thenAccept(response -> log.info(
+                            "\n>>> REQUEST\n{} {}\n{}\n{}\n\nHello>>> RESPONSE\n{}\n{}",
+                            hgRequest.method(),
+                            hgRequest.uri(),
+                            this.parseHeaders(hgRequest.headers()),
+                            hgRequest.body(),
+                            this.parseHeaders(response.headers()),
+                            response.body()));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void log(final HttpPlaygroundRequest hgRequest, final HttpResponse<String> response) {
-        log.info("\n>>> REQUEST\n{} {}\n{}",
-                hgRequest.method(),
-                hgRequest.uri(),
-                this.parseHeaders(hgRequest.headers()));
-        log.info("\n>>> RESPONSE\n{}\n{}",
-                this.parseHeaders(response.headers()),
-                response.body());
     }
 
     private StringBuilder parseHeaders(final HttpHeaders headers) {
