@@ -36,3 +36,8 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.register("open-test-reports", Exec) {
+	commandLine "open", "./build/reports/tests/test/index.html"
+}
+tasks.named('test').get().finalizedBy('open-test-reports')
