@@ -62,6 +62,13 @@ public class HttpPlaygroundRequest {
         return this.body;
     }
 
+    @Override
+    public String toString() {
+        return this.method() + ' ' + this.uri()
+                + '\n' + this.headers()
+                + (this.body() == null ? "" : "\n\n" + this.body());
+    }
+
     public static class Builder {
 
         private final HttpMethod method;

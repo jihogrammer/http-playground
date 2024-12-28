@@ -1,12 +1,16 @@
 package dev.jihogrammer.playground.http.application.service;
 
 import dev.jihogrammer.playground.http.domain.HttpPlaygroundRequest;
+import dev.jihogrammer.playground.http.domain.HttpPlaygroundResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 class HttpPlaygroundClientTest {
@@ -30,8 +34,11 @@ class HttpPlaygroundClientTest {
                 .queryParam("q", "hello+world")
                 .build();
 
+        // when
+        var response = client.send(hgRequest);
+
         // then
-        assertThatCode(() -> client.send(hgRequest)).doesNotThrowAnyException();
+        assertThat(response.isOk()).isTrue();
     }
 
     @Test
@@ -41,8 +48,11 @@ class HttpPlaygroundClientTest {
                 .body("{\"hello\": \"world\"}")
                 .build();
 
+        // when
+        var response = client.send(hgRequest);
+
         // then
-        assertThatCode(() -> client.send(hgRequest)).doesNotThrowAnyException();
+        assertThat(response.isBadRequest()).isTrue();
     }
 
     @Test
@@ -52,8 +62,11 @@ class HttpPlaygroundClientTest {
                 .header("X-Request-ID", UUID.randomUUID() + "@TEST")
                 .build();
 
+        // when
+        var response = client.send(hgRequest);
+
         // then
-        assertThatCode(() -> client.send(hgRequest)).doesNotThrowAnyException();
+        assertThat(response.isBadRequest()).isTrue();
     }
 
     @Test
@@ -61,28 +74,38 @@ class HttpPlaygroundClientTest {
         // given
         var hgRequest = HttpPlaygroundRequest.delete("https://www.google.com/search").build();
 
+        // when
+        var response = client.send(hgRequest);
+
         // then
-        assertThatCode(() -> client.send(hgRequest)).doesNotThrowAnyException();
+        assertThat(response.isBadRequest()).isTrue();
     }
 
     @Test
     void sendAsync() {
         // given
-        var a = HttpPlaygroundRequest.get("https://www.google.com").build();
-        var b = HttpPlaygroundRequest.post("https://www.naver.com").build();
-        var c = HttpPlaygroundRequest.put("https://www.chatgpt.com").build();
-        var d = HttpPlaygroundRequest.delete("https://www.github.com").build();
+        var a = client.sendAsync(HttpPlaygroundRequest.get("https://www.google.com").build());
+        var b = client.sendAsync(HttpPlaygroundRequest.post("https://www.naver.com").build());
+        var c = client.sendAsync(HttpPlaygroundRequest.put("https://www.chatgpt.com").build());
+        var d = client.sendAsync(HttpPlaygroundRequest.delete("https://www.github.com").build());
 
         // when
-        var futures = CompletableFuture.allOf(
-                client.sendAsync(a),
-                client.sendAsync(b),
-                client.sendAsync(c),
-                client.sendAsync(d)
-        );
+        CompletableFuture.allOf(a, b, c, d).thenRun(() -> {
+            try {
+                HttpPlaygroundResponse aRes = a.get();
+                HttpPlaygroundResponse bRes = b.get();
+                HttpPlaygroundResponse cRes = c.get();
+                HttpPlaygroundResponse dRes = d.get();
 
-        // then
-        assertThatCode(futures::join).doesNotThrowAnyException();
+                // then
+                assertThat(aRes.isOk()).isTrue();
+                assertThat(bRes.isOk()).isTrue();
+                assertThat(cRes.isRedirection()).isTrue();
+                assertThat(dRes.isRedirection()).isTrue();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).join();
     }
 
 }

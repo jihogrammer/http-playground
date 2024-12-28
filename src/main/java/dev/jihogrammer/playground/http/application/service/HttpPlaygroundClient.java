@@ -2,6 +2,7 @@ package dev.jihogrammer.playground.http.application.service;
 
 import dev.jihogrammer.playground.http.application.port.in.HttpSender;
 import dev.jihogrammer.playground.http.domain.HttpPlaygroundRequest;
+import dev.jihogrammer.playground.http.domain.HttpPlaygroundResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,33 +13,28 @@ import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 @Slf4j
-class HttpPlaygroundClient implements HttpSender<Void>, AutoCloseable {
+class HttpPlaygroundClient implements HttpSender, AutoCloseable {
 
     private final HttpClient httpClient;
 
     private final HttpResponse.BodyHandler<String> bodyHandler;
 
     @Override
-    public void send(final HttpPlaygroundRequest hgRequest) {
-        try {
-            this.sendAsync(hgRequest).join();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public HttpPlaygroundResponse send(final HttpPlaygroundRequest hgRequest) {
+        return this.sendAsync(hgRequest).join();
     }
 
     @Override
-    public CompletableFuture<Void> sendAsync(final HttpPlaygroundRequest hgRequest) {
+    public CompletableFuture<HttpPlaygroundResponse> sendAsync(final HttpPlaygroundRequest hgRequest) {
         try {
             return this.httpClient.sendAsync(hgRequest.getHttpRequest(), bodyHandler)
-                    .thenAccept(response -> log.info(
-                            "\n>>> REQUEST\n{} {}\n{}\n{}\n\nHello>>> RESPONSE\n{}\n{}",
-                            hgRequest.method(),
-                            hgRequest.uri(),
-                            this.parseHeaders(hgRequest.headers()),
-                            hgRequest.body(),
-                            this.parseHeaders(response.headers()),
-                            response.body()));
+                    .thenApply(response -> {
+                        var hpResponse = new HttpPlaygroundResponse(response);
+
+                        log.info("\n>>> REQUEST\n{}\n\n>>> RESPONSE\n{}", hgRequest, hpResponse);
+
+                        return hpResponse;
+                    });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
