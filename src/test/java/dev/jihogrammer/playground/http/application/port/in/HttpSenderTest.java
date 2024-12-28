@@ -1,7 +1,6 @@
 package dev.jihogrammer.playground.http.application.port.in;
 
 import dev.jihogrammer.playground.http.domain.HttpPlaygroundRequest;
-import dev.jihogrammer.playground.http.domain.HttpPlaygroundResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,10 +23,10 @@ class HttpSenderTest {
         // when
         CompletableFuture.allOf(a, b, c, d).thenRun(() -> {
             try {
-                HttpPlaygroundResponse aRes = a.get();
-                HttpPlaygroundResponse bRes = b.get();
-                HttpPlaygroundResponse cRes = c.get();
-                HttpPlaygroundResponse dRes = d.get();
+                var aRes = a.get();
+                var bRes = b.get();
+                var cRes = c.get();
+                var dRes = d.get();
 
                 // then
                 assertThat(aRes.isOk()).isTrue();

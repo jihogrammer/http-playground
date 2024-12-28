@@ -1,17 +1,13 @@
 package dev.jihogrammer.playground.http.application.service;
 
 import dev.jihogrammer.playground.http.domain.HttpPlaygroundRequest;
-import dev.jihogrammer.playground.http.domain.HttpPlaygroundResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 class HttpPlaygroundClientTest {
 
@@ -92,10 +88,10 @@ class HttpPlaygroundClientTest {
         // when
         CompletableFuture.allOf(a, b, c, d).thenRun(() -> {
             try {
-                HttpPlaygroundResponse aRes = a.get();
-                HttpPlaygroundResponse bRes = b.get();
-                HttpPlaygroundResponse cRes = c.get();
-                HttpPlaygroundResponse dRes = d.get();
+                var aRes = a.get();
+                var bRes = b.get();
+                var cRes = c.get();
+                var dRes = d.get();
 
                 // then
                 assertThat(aRes.isOk()).isTrue();

@@ -29,11 +29,21 @@ public class HttpPlaygroundResponse {
     public String toString() {
         var body = this.response.body();
 
-        return String.valueOf(this.response.version())
-                + ' '
-                + this.response.statusCode()
-                + '\n'
-                + this.response.headers()
-                + (body == null ? "" : "\n\n" + body);
+        var headers = this.response.headers().map();
+        var headerBuilder = new StringBuilder();
+
+        for (var k : headers.keySet()) {
+            if (":status".equalsIgnoreCase(k)) {
+                continue;
+            }
+            for (var v : headers.get(k)) {
+                headerBuilder.append(k).append(": ").append(v).append('\n');
+            }
+        }
+
+        return (this.response.version() + " " + this.response.statusCode() + '\n')
+                + headerBuilder
+                + (body == null || body.isBlank() ? "" : "\n" + body);
     }
+
 }

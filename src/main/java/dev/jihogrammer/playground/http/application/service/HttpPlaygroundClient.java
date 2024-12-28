@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
@@ -31,25 +30,13 @@ class HttpPlaygroundClient implements HttpSender, AutoCloseable {
                     .thenApply(response -> {
                         var hpResponse = new HttpPlaygroundResponse(response);
 
-                        log.info("\n>>> REQUEST\n{}\n\n>>> RESPONSE\n{}", hgRequest, hpResponse);
+                        log.debug("\n>>> REQUEST\n{}\n>>> RESPONSE\n{}", hgRequest, hpResponse);
 
                         return hpResponse;
                     });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private StringBuilder parseHeaders(final HttpHeaders headers) {
-        var sb = new StringBuilder();
-
-        for (var k : headers.map().keySet()) {
-            for (var v : headers.map().get(k)) {
-                sb.append(k).append(": ").append(v).append('\n');
-            }
-        }
-
-        return sb;
     }
 
     @Override

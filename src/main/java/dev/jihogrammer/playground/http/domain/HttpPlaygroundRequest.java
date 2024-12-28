@@ -64,8 +64,17 @@ public class HttpPlaygroundRequest {
 
     @Override
     public String toString() {
-        return this.method() + ' ' + this.uri()
-                + '\n' + this.headers()
+        var headers = this.headers().map();
+        var headerBuilder = new StringBuilder();
+
+        for (var k : headers.keySet()) {
+            for (var v : headers.get(k)) {
+                headerBuilder.append(k).append(": ").append(v).append('\n');
+            }
+        }
+
+        return (this.method() + ' ' + this.uri() + '\n')
+                + headerBuilder
                 + (this.body() == null ? "" : "\n\n" + this.body());
     }
 

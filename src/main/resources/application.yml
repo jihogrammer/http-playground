@@ -2,4 +2,11 @@ spring.application.name: http-playground
 
 logging:
   level:
-    root: INFO
+    dev.jihogrammer.playground: DEBUG
+
+---
+
+spring.config.activate.on-profile: production
+logging:
+  level:
+    dev.jihogrammer.playground: INFO
