@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <title>HTTP Playground</title>
+</head>
+<body>
+<h1>HTTP Playground</h1>
+
+<form id="request">
+    <label for="method">
+        <select id="method">
+            <option value="GET" selected>GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+        </select>
+    </label>
+    <label for="url">
+        <input type="text" id="url" placeholder="URL">
+    </label>
+    <input type="submit" value="RUN">
+    <div id="headers">
+        <p>Headers</p>
+        <div id="header-children"></div>
+    </div>
+    <div id="query-params">
+        <p>Query Params</p>
+        <div id="query-param-children"></div>
+    </div>
+    <div>
+        <p>Body</p>
+        <label for="body">
+            <textarea id="body" placeholder="input body content"></textarea>
+        </label>
+    </div>
+    <div id="response">
+        <div>
+            <p>Status Code</p>
+            <p id="response-status-code"></p>
+        </div>
+        <div>
+            <p>Response Headers</p>
+            <pre id="response-headers"></pre>
+        </div>
+        <div>
+            <p>Response Body</p>
+            <pre id="response-body"></pre>
+        </div>
+    </div>
+</form>
+
+<script>
+    const requestContainer = {
+        element: document.getElementById("request"),
+        url: document.getElementById("url"),
+        method: document.getElementById("method"),
+    };
+
+    const responseContainer = {
+        element: document.getElementById("response"),
+        statusCode: document.getElementById("response-status-code"),
+        headers: document.getElementById("response-headers"),
+        body: document.getElementById("response-body"),
+    };
+
+    const headerContainer = {
+        element: document.getElementById("headers"),
+        childrenElement: document.getElementById("header-children"),
+        children: [],
+    };
+
+    const queryParamContainer = {
+        element: document.getElementById("query-params"),
+        childrenElement: document.getElementById("query-param-children"),
+        children: [],
+    };
+
+    const appendKeyValueInputChild = (container) => {
+        const kvContainer = document.createElement("div");
+        const ke = document.createElement("input");
+        const ve = document.createElement("input");
+
+        ke.placeholder = "key";
+        ve.placeholder = "value";
+
+        ke.addEventListener("keyup", (e) => {
+            if ("Enter" === e.key) {
+                ve.focus();
+            }
+        });
+        ve.addEventListener("keyup", (e) => {
+            if ("Enter" === e.key) {
+                appendKeyValueInputChild(container);
+            }
+        });
+
+        kvContainer.appendChild(ke);
+        kvContainer.appendChild(ve);
+        container.children.push(kvContainer);
+
+        renderChildren(container);
+        ke.focus();
+    };
+
+    const renderChildren = (container) => {
+        container.childrenElement.replaceChildren(...container.children);
+    };
+
+    (() => {
+        requestContainer.element.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            if (!requestContainer.url.value) {
+                return;
+            }
+
+            const headers = {};
+            for (const child of headerContainer.children) {
+                const k = child.children[0].value;
+                const v = child.children[1].value;
+
+                if (k && v) {
+                    if (!headers[k]) {
+                        headers[k] = [];
+                    }
+                    headers[k].push(v);
+                }
+            }
+
+            const queryParams = {};
+            for (const child of queryParamContainer.children) {
+                const k = child.children[0].value;
+                const v = child.children[1].value;
+
+                if (k && v) {
+                    if (!headers[k]) {
+                        queryParams[k] = [];
+                    }
+                    queryParams[k].push(v);
+                }
+            }
+
+            const options = {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    method: requestContainer.method.value,
+                    url: requestContainer.url.value,
+                    headers: headers,
+                    queryParams: queryParams
+                }),
+            };
+
+            console.log(options.body);
+            responseContainer.statusCode.textContent = "";
+            responseContainer.headers.textContent = "";
+            responseContainer.body.textContent = "";
+
+            fetch("/relay", options)
+                .then((res) => res.json())
+                .then((data) => {
+                    console.log(data);
+
+                    responseContainer.statusCode.textContent = data.statusCode;
+                    responseContainer.headers.textContent = JSON.stringify(data.headers, null, 2);
+                    responseContainer.body.textContent = data.body;
+
+                    if (!responseContainer.statusCode.textContent && !responseContainer.headers.textContent) {
+                        responseContainer.body.textContent = JSON.stringify(data, null, 2);
+                    }
+                })
+                .catch((e) => {
+                    console.error(e);
+                    responseContainer.body.textContent = e;
+                });
+        });
+
+        appendKeyValueInputChild(headerContainer);
+        appendKeyValueInputChild(queryParamContainer);
+
+        requestContainer.url.focus();
+    })()
+</script>
+</body>
+</html>

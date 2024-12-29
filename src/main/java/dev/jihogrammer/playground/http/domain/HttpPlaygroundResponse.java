@@ -1,6 +1,8 @@
 package dev.jihogrammer.playground.http.domain;
 
 import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.Map;
 
 public class HttpPlaygroundResponse {
 
@@ -10,18 +12,30 @@ public class HttpPlaygroundResponse {
         this.response = response;
     }
 
+    public int statusCode() {
+        return this.response.statusCode();
+    }
+
+    public Map<String, List<String>> headers() {
+        return this.response.headers().map();
+    }
+
+    public String body() {
+        return this.response.body();
+    }
+
     public boolean isOk() {
-        int statusCode = this.response.statusCode();
+        int statusCode = this.statusCode();
         return 200 <= statusCode && statusCode < 300;
     }
 
     public boolean isRedirection() {
-        int statusCode = this.response.statusCode();
+        int statusCode = this.statusCode();
         return 300 <= statusCode && statusCode < 400;
     }
 
     public boolean isBadRequest() {
-        int statusCode = this.response.statusCode();
+        int statusCode = this.statusCode();
         return 400 <= statusCode && statusCode < 500;
     }
 
