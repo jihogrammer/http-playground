@@ -84,9 +84,9 @@ public class HttpPlaygroundRequest {
 
         private final String url;
 
-        private final Set<Pair> headers;
+        private final Set<Pair<String, String>> headers;
 
-        private final Set<Pair> queryParams;
+        private final Set<Pair<String, String>> queryParams;
 
         private String body;
 
@@ -116,12 +116,12 @@ public class HttpPlaygroundRequest {
 
         public Builder header(final String key, final String value) {
             final var k = key.toLowerCase();
-            this.headers.add(new Pair(k, value));
+            this.headers.add(new Pair<>(k, value));
             return this;
         }
 
         public Builder queryParam(final String key, final String value) {
-            this.queryParams.add(new Pair(key, value));
+            this.queryParams.add(new Pair<>(key, value));
             return this;
         }
 
@@ -176,9 +176,6 @@ public class HttpPlaygroundRequest {
                     .collect(Collectors.joining("&"));
         }
 
-    }
-
-    private record Pair(String k, String v) {
     }
 
 }
