@@ -1,6 +1,7 @@
 package dev.jihogrammer.playground.http.domain;
 
 import java.net.http.HttpResponse;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -8,8 +9,14 @@ public class HttpPlaygroundResponse {
 
     private final HttpResponse<String> response;
 
+    private final Map<String, List<String>> headers;
+
     public HttpPlaygroundResponse(final HttpResponse<String> response) {
         this.response = response;
+
+        var tempHeaders = new HashMap<>(response.headers().map());
+        tempHeaders.remove(":status");
+        this.headers = Map.copyOf(tempHeaders);
     }
 
     public int statusCode() {
@@ -17,7 +24,7 @@ public class HttpPlaygroundResponse {
     }
 
     public Map<String, List<String>> headers() {
-        return this.response.headers().map();
+        return this.headers;
     }
 
     public String body() {
@@ -41,23 +48,32 @@ public class HttpPlaygroundResponse {
 
     @Override
     public String toString() {
-        var body = this.response.body();
+        var protocolBuilder = new StringBuilder()
+                .append(this.response.version())
+                .append(' ')
+                .append(this.statusCode());
 
-        var headers = this.response.headers().map();
         var headerBuilder = new StringBuilder();
-
-        for (var k : headers.keySet()) {
-            if (":status".equalsIgnoreCase(k)) {
-                continue;
-            }
-            for (var v : headers.get(k)) {
+        for (var k : this.headers.keySet()) {
+            for (var v : this.headers.get(k)) {
                 headerBuilder.append(k).append(": ").append(v).append('\n');
             }
         }
 
-        return (this.response.version() + " " + this.response.statusCode() + '\n')
-                + headerBuilder
-                + (body == null || body.isBlank() ? "" : "\n" + body);
+        var body = this.response.body();
+        var bodyBuilder = new StringBuilder();
+        if (body != null && !body.isBlank()) {
+            if (body.length() < 300) {
+                bodyBuilder.append(body);
+            } else {
+                bodyBuilder.append(body.substring(0, 300)).append("...");
+            }
+        }
+
+        return ""
+                + protocolBuilder.append('\n')
+                + headerBuilder.append('\n')
+                + bodyBuilder.append('\n');
     }
 
 }

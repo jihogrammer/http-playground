@@ -245,17 +245,27 @@
         container.target.replaceChildren(...container.children);
       };
 
+      class KeyController {
+        #keys;
+
+        constructor(callback) {
+          this.#keys = {};
+
+          window.addEventListener("keydown", (e) => {
+            this.#keys[e.key] = true;
+          });
+          window.addEventListener("keyup", (e) => {
+            if (this.#keys["Meta"] && this.#keys["Enter"]) {
+              callback();
+              this.#keys = {};
+            }
+            this.#keys[e.key] = false;
+          });
+        }
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
-        const keys = {};
-        window.addEventListener("keydown", (e) => {
-          keys[e.key] = true;
-        });
-        window.addEventListener("keyup", (e) => {
-          if (keys["Meta"] && keys["Enter"]) {
-            container.submit.target.click();
-          }
-          keys[e.key] = false;
-        });
+        const keyController = new KeyController(() => container.submit.target.click());
 
         container.submit.target.addEventListener("click", (e) => {
           if (!container.request.url.target.value) {
