@@ -1,81 +1,220 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
+  <head>
     <title>HTTP Playground</title>
-</head>
-<body>
-<h1>HTTP Playground</h1>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<form id="request">
-    <label for="method">
-        <select id="method">
-            <option value="GET" selected>GET</option>
-            <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="DELETE">DELETE</option>
-        </select>
-    </label>
-    <label for="url">
-        <input type="text" id="url" placeholder="URL">
-    </label>
-    <input type="submit" value="RUN">
-    <div id="headers">
-        <p>Headers</p>
-        <div id="header-children"></div>
-    </div>
-    <div id="query-params">
-        <p>Query Params</p>
-        <div id="query-param-children"></div>
-    </div>
-    <div>
-        <p>Body</p>
-        <label for="body">
+    <style>
+      /* github copilot 결과물 */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1 {
+        margin: 0;
+        padding: 1rem;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+      }
+
+      #playground-container {
+        display: flex;
+        justify-content: space-around;
+        padding: 1rem;
+      }
+
+      #request-container {
+        width: 40%;
+      }
+
+      #response-container {
+        width: 40%;
+      }
+
+      #req-method-container {
+        margin-bottom: 1rem;
+      }
+
+      #req-url-container {
+        margin-bottom: 1rem;
+      }
+
+      #req-header-container,
+      #req-param-container {
+        margin-bottom: 1rem;
+      }
+
+      #req-body-container {
+        margin-bottom: 1rem;
+      }
+
+      #res-status-code-container {
+        margin-bottom: 1rem;
+      }
+
+      #res-header-container {
+        margin-bottom: 1rem;
+      }
+
+      #res-body-container {
+        margin-bottom: 1rem;
+      }
+
+      #req-header-children,
+      #req-param-children {
+        display: flex;
+        flex-direction: column;
+      }
+
+      #req-header-children > div,
+      #req-param-children > div {
+        display: flex;
+        margin-bottom: 0.5rem;
+      }
+
+      #req-header-children > div > input,
+      #req-param-children > div > input {
+        margin-right: 0.5rem;
+      }
+
+      #req-header-children > div > input,
+      #req-param-children > div > input,
+      #req-header-children > div > input {
+        width: 50%;
+      }
+
+      #req-header-children > div > input,
+      #req-param-children > div > input {
+        width: 50%;
+      }
+
+      #req-body-container > textarea {
+        width: 100%;
+        height: 10rem;
+      }
+
+      #res-header-container > pre,
+      #res-body-container > pre {
+        white-space: pre-wrap;
+      }
+
+      #res-body-container > pre {
+        word-break: break-all;
+      }
+
+      #submit-container {
+        text-align: right;
+      }
+
+      #submit {
+        padding: 0.5rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>HTTP Playground</h1>
+
+    <section id="playground-container">
+      <div id="request-container">
+        <div>
+          <div id="req-method-container">
+            <select id="req-method">
+              <option value="GET" selected>GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+          </div>
+          <div id="req-url-container">
+            <input id="req-url" type="text" placeholder="URL" />
+          </div>
+          <div id="submit-container">
+            <button id="submit">RUN</button>
+          </div>
+        </div>
+        <div>
+          <div id="req-header-container">
+            <p>Headers</p>
+            <div id="req-header-children"></div>
+          </div>
+          <div id="req-param-container">
+            <p>Query Params</p>
+            <div id="req-param-children"></div>
+          </div>
+        </div>
+        <div>
+          <div id="req-body-container">
+            <p>Body</p>
             <textarea id="body" placeholder="input body content"></textarea>
-        </label>
-    </div>
-    <div id="response">
-        <div>
-            <p>Status Code</p>
-            <p id="response-status-code"></p>
+          </div>
         </div>
-        <div>
-            <p>Response Headers</p>
-            <pre id="response-headers"></pre>
+      </div>
+
+      <div id="response-container">
+        <div id="res-status-code-container">
+          <p>Status Code</p>
+          <p id="res-status-code"></p>
         </div>
-        <div>
-            <p>Response Body</p>
-            <pre id="response-body"></pre>
+        <div id="res-header-container">
+          <p>Response Headers</p>
+          <pre id="res-headers"></pre>
         </div>
-    </div>
-</form>
+        <div id="res-body-container">
+          <p>Response Body</p>
+          <pre id="res-body"></pre>
+        </div>
+      </div>
+    </section>
 
-<script>
-    const requestContainer = {
-        element: document.getElementById("request"),
-        url: document.getElementById("url"),
-        method: document.getElementById("method"),
-    };
+    <script>
+      const container = {
+        request: {
+          instance: document.getElementById("request-container"),
+          method: {
+            instance: document.getElementById("req-method-container"),
+            target: document.getElementById("req-method"),
+          },
+          url: {
+            instance: document.getElementById("req-url-container"),
+            target: document.getElementById("req-url"),
+          },
+          header: {
+            instance: document.getElementById("req-header-container"),
+            target: document.getElementById("req-header-children"),
+            children: [],
+          },
+          param: {
+            instance: document.getElementById("req-param-container"),
+            target: document.getElementById("req-param-children"),
+            children: [],
+          },
+        },
+        response: {
+          instance: document.getElementById("response-container"),
+          statusCode: {
+            instance: document.getElementById("res-status-code-container"),
+            target: document.getElementById("res-status-code"),
+          },
+          header: {
+            instance: document.getElementById("res-headers-container"),
+            target: document.getElementById("res-headers"),
+          },
+          body: {
+            instance: document.getElementById("res-body-container"),
+            target: document.getElementById("res-body"),
+          },
+        },
+        submit: {
+          instance: document.getElementById("submit-container"),
+          target: document.getElementById("submit"),
+        },
+      };
 
-    const responseContainer = {
-        element: document.getElementById("response"),
-        statusCode: document.getElementById("response-status-code"),
-        headers: document.getElementById("response-headers"),
-        body: document.getElementById("response-body"),
-    };
-
-    const headerContainer = {
-        element: document.getElementById("headers"),
-        childrenElement: document.getElementById("header-children"),
-        children: [],
-    };
-
-    const queryParamContainer = {
-        element: document.getElementById("query-params"),
-        childrenElement: document.getElementById("query-param-children"),
-        children: [],
-    };
-
-    const appendKeyValueInputChild = (container) => {
+      const appendKeyValueInputChild = (container) => {
         const kvContainer = document.createElement("div");
         const ke = document.createElement("input");
         const ve = document.createElement("input");
@@ -84,14 +223,14 @@
         ve.placeholder = "value";
 
         ke.addEventListener("keyup", (e) => {
-            if ("Enter" === e.key) {
-                ve.focus();
-            }
+          if ("Enter" === e.key) {
+            ve.focus();
+          }
         });
         ve.addEventListener("keyup", (e) => {
-            if ("Enter" === e.key) {
-                appendKeyValueInputChild(container);
-            }
+          if ("Enter" === e.key) {
+            appendKeyValueInputChild(container);
+          }
         });
 
         kvContainer.appendChild(ke);
@@ -100,88 +239,98 @@
 
         renderChildren(container);
         ke.focus();
-    };
+      };
 
-    const renderChildren = (container) => {
-        container.childrenElement.replaceChildren(...container.children);
-    };
+      const renderChildren = (container) => {
+        container.target.replaceChildren(...container.children);
+      };
 
-    (() => {
-        requestContainer.element.addEventListener("submit", (e) => {
-            e.preventDefault();
-
-            if (!requestContainer.url.value) {
-                return;
-            }
-
-            const headers = {};
-            for (const child of headerContainer.children) {
-                const k = child.children[0].value;
-                const v = child.children[1].value;
-
-                if (k && v) {
-                    if (!headers[k]) {
-                        headers[k] = [];
-                    }
-                    headers[k].push(v);
-                }
-            }
-
-            const queryParams = {};
-            for (const child of queryParamContainer.children) {
-                const k = child.children[0].value;
-                const v = child.children[1].value;
-
-                if (k && v) {
-                    if (!headers[k]) {
-                        queryParams[k] = [];
-                    }
-                    queryParams[k].push(v);
-                }
-            }
-
-            const options = {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    method: requestContainer.method.value,
-                    url: requestContainer.url.value,
-                    headers: headers,
-                    queryParams: queryParams
-                }),
-            };
-
-            console.log(options.body);
-            responseContainer.statusCode.textContent = "";
-            responseContainer.headers.textContent = "";
-            responseContainer.body.textContent = "";
-
-            fetch("/relay", options)
-                .then((res) => res.json())
-                .then((data) => {
-                    console.log(data);
-
-                    responseContainer.statusCode.textContent = data.statusCode;
-                    responseContainer.headers.textContent = JSON.stringify(data.headers, null, 2);
-                    responseContainer.body.textContent = data.body;
-
-                    if (!responseContainer.statusCode.textContent && !responseContainer.headers.textContent) {
-                        responseContainer.body.textContent = JSON.stringify(data, null, 2);
-                    }
-                })
-                .catch((e) => {
-                    console.error(e);
-                    responseContainer.body.textContent = e;
-                });
+      document.addEventListener("DOMContentLoaded", () => {
+        const keys = {};
+        window.addEventListener("keydown", (e) => {
+          keys[e.key] = true;
+        });
+        window.addEventListener("keyup", (e) => {
+          if (keys["Meta"] && keys["Enter"]) {
+            container.submit.target.click();
+          }
+          keys[e.key] = false;
         });
 
-        appendKeyValueInputChild(headerContainer);
-        appendKeyValueInputChild(queryParamContainer);
+        container.submit.target.addEventListener("click", (e) => {
+          if (!container.request.url.target.value) {
+            return;
+          }
 
-        requestContainer.url.focus();
-    })()
-</script>
-</body>
+          const method = container.request.method.target.value || "GET";
+          const url = (() => {
+            const inputValue = container.request.url.target.value;
+            return inputValue.startsWith("http") ? inputValue : "http://" + inputValue;
+          })();
+
+          const headers = {};
+          for (const child of container.request.header.children) {
+            const k = child.children[0].value;
+            const v = child.children[1].value;
+
+            if (k && v) {
+              if (!headers[k]) {
+                headers[k] = [];
+              }
+              headers[k].push(v);
+            }
+          }
+
+          const queryParams = {};
+          for (const child of container.request.param.children) {
+            const k = child.children[0].value;
+            const v = child.children[1].value;
+
+            if (k && v) {
+              if (!headers[k]) {
+                queryParams[k] = [];
+              }
+              queryParams[k].push(v);
+            }
+          }
+
+          const options = {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ method, url, headers, queryParams }),
+          };
+
+          console.log(options.body);
+          container.response.statusCode.target.textContent = "";
+          container.response.header.target.textContent = "";
+          container.response.body.target.textContent = "";
+
+          fetch("/relay", options)
+            .then((res) => res.json())
+            .then((data) => {
+              console.log(data);
+
+              container.response.statusCode.target.textContent = data.statusCode;
+              container.response.header.target.textContent = JSON.stringify(data.headers, null, 2);
+              container.response.body.target.textContent = data.body;
+
+              if (!container.response.statusCode.target.textContent && !container.response.header.target.textContent) {
+                container.response.body.target.textContent = JSON.stringify(data, null, 2);
+              }
+            })
+            .catch((e) => {
+              console.error(e);
+              container.response.body.target.textContent = e;
+            });
+        });
+
+        appendKeyValueInputChild(container.request.header);
+        appendKeyValueInputChild(container.request.param);
+
+        container.request.url.target.focus();
+      });
+    </script>
+  </body>
 </html>
