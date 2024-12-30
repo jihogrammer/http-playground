@@ -2,8 +2,8 @@
 <html lang="ko">
   <head>
     <title>HTTP Playground</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
       /* github copilot 결과물 */
@@ -119,6 +119,12 @@
     <h1>HTTP Playground</h1>
 
     <section id="playground-container">
+      <div>
+        <select id="mode">
+          <option value="local" selected>LOCAL</option>
+          <option value="proxy">PROXY</option>
+        </select>
+      </div>
       <div id="request-container">
         <div>
           <div id="req-method-container">
@@ -172,6 +178,7 @@
 
     <script>
       const container = {
+        mode: document.getElementById("mode"),
         request: {
           instance: document.getElementById("request-container"),
           method: {
@@ -264,8 +271,76 @@
         }
       }
 
+      const renderResponse = (data, { statusCode, headers, body }) => {
+        console.log(data);
+
+        statusCode.textContent = data.statusCode;
+        headers.textContent = JSON.stringify(data.headers, null, 2);
+        body.textContent = data.body;
+
+        if (!statusCode.textContent && !header.textContent) {
+          body.textContent = JSON.stringify(data, null, 2);
+        }
+      };
+
+      const handleFetchException = (e) => {
+        console.error(e);
+        container.response.body.target.textContent = e;
+      };
+
+      const fetchViaProxy = (options) => {
+        fetch("/relay", { ...options, body: JSON.stringify(options.body) })
+          .then((res) => res.json())
+          .then((data) => {
+            renderResponse(data, {
+              statusCode: container.response.statusCode.target,
+              headers: container.response.header.target,
+              body: container.response.body.target,
+            });
+          })
+          .catch(handleFetchException);
+      };
+
+      const fetchViaLocal = (options) => {
+        const statusCode = {};
+        const responseHeaders = {};
+
+        fetch(options.body.url, {
+          method: options.body.method,
+          headers: { ...options.body.headers },
+        })
+          .then((res) => {
+            res.headers.forEach((v, k) => {
+              if (!responseHeaders[k]) {
+                responseHeaders[k] = [];
+              }
+              responseHeaders[k].push(v);
+            });
+            statusCode.value = res.status;
+
+            return res.text();
+          })
+          .then((data) => {
+            renderResponse(
+              {
+                statusCode: statusCode.value,
+                headers: responseHeaders,
+                body: data,
+              },
+              {
+                statusCode: container.response.statusCode.target,
+                headers: container.response.header.target,
+                body: container.response.body.target,
+              }
+            );
+          })
+          .catch(handleFetchException);
+      };
+
       document.addEventListener("DOMContentLoaded", () => {
-        const keyController = new KeyController(() => container.submit.target.click());
+        const keyController = new KeyController(() => {
+          container.submit.target.click();
+        });
 
         container.submit.target.addEventListener("click", (e) => {
           if (!container.request.url.target.value) {
@@ -275,7 +350,9 @@
           const method = container.request.method.target.value || "GET";
           const url = (() => {
             const inputValue = container.request.url.target.value;
-            return inputValue.startsWith("http") ? inputValue : "http://" + inputValue;
+            return inputValue.startsWith("http")
+              ? inputValue
+              : "http://" + inputValue;
           })();
 
           const headers = {};
@@ -309,7 +386,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ method, url, headers, queryParams }),
+            body: { method, url, headers, queryParams },
           };
 
           console.log(options.body);
@@ -317,23 +394,11 @@
           container.response.header.target.textContent = "";
           container.response.body.target.textContent = "";
 
-          fetch("/relay", options)
-            .then((res) => res.json())
-            .then((data) => {
-              console.log(data);
-
-              container.response.statusCode.target.textContent = data.statusCode;
-              container.response.header.target.textContent = JSON.stringify(data.headers, null, 2);
-              container.response.body.target.textContent = data.body;
-
-              if (!container.response.statusCode.target.textContent && !container.response.header.target.textContent) {
-                container.response.body.target.textContent = JSON.stringify(data, null, 2);
-              }
-            })
-            .catch((e) => {
-              console.error(e);
-              container.response.body.target.textContent = e;
-            });
+          if (container.mode.value === "proxy") {
+            fetchViaProxy(options);
+          } else {
+            fetchViaLocal(options);
+          }
         });
 
         appendKeyValueInputChild(container.request.header);
