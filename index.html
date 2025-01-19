@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <title>HTTP Playground</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <h1>HTTP Playground</h1>
+
+    <section id="playground-container">
+      <div id="request-container">
+        <div>
+          <div id="req-method-container">
+            <select id="req-method">
+              <option value="GET" selected>GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+          </div>
+          <div id="req-url-container">
+            <input id="req-url" type="text" placeholder="URL" />
+          </div>
+          <div id="submit-container">
+            <button id="submit">RUN</button>
+          </div>
+          <div>
+            <button id="save">SAVE</button>
+          </div>
+        </div>
+        <div id="req-header-param-container">
+          <div id="req-header-container">
+            <p>Headers</p>
+            <div id="req-header-children"></div>
+          </div>
+          <div id="req-param-container">
+            <p>Query Params</p>
+            <div id="req-param-children"></div>
+          </div>
+        </div>
+        <div>
+          <div id="req-body-container">
+            <p>JSON Body</p>
+            <textarea id="body" placeholder="input body content"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="response-container">
+        <div id="res-status-code-container">
+          <p>Status Code</p>
+          <p id="res-status-code"></p>
+        </div>
+        <div id="res-header-container">
+          <p>Response Headers</p>
+          <pre id="res-headers"></pre>
+        </div>
+        <div id="res-body-container">
+          <p>Response Body</p>
+          <pre id="res-body"></pre>
+        </div>
+      </div>
+    </section>
+
+    <script defer type="module" src="./index.js"></script>
+  </body>
+</html>
