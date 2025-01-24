@@ -1,134 +1,50 @@
 "use strict";
 
-import { encodeRequest, decodeRequest, KeyController } from "./utils.js";
+import { KeyController } from "./utils.js";
+import { Container } from "./viewBinder.js";
 
-const container = {
-  request: {
-    instance: document.getElementById("request-container"),
-    method: {
-      instance: document.getElementById("req-method-container"),
-      target: document.getElementById("req-method"),
-    },
-    url: {
-      instance: document.getElementById("req-url-container"),
-      target: document.getElementById("req-url"),
-    },
-    header: {
-      instance: document.getElementById("req-header-container"),
-      target: document.getElementById("req-header-children"),
-      children: [],
-    },
-    param: {
-      instance: document.getElementById("req-param-container"),
-      target: document.getElementById("req-param-children"),
-      children: [],
-    },
-  },
-  response: {
-    instance: document.getElementById("response-container"),
-    statusCode: {
-      instance: document.getElementById("res-status-code-container"),
-      target: document.getElementById("res-status-code"),
-    },
-    header: {
-      instance: document.getElementById("res-headers-container"),
-      target: document.getElementById("res-headers"),
-    },
-    body: {
-      instance: document.getElementById("res-body-container"),
-      target: document.getElementById("res-body"),
-    },
-  },
-  submit: {
-    instance: document.getElementById("submit-container"),
-    target: document.getElementById("submit"),
-  },
-};
+const container = new Container();
 
-const appendKeyValueInputChild = (container) => {
-  const kvContainer = document.createElement("div");
-  const deleteButton = document.createElement("button");
-  const ke = document.createElement("input");
-  const ve = document.createElement("input");
-
-  deleteButton.textContent = "X";
-  ke.placeholder = "key";
-  ve.placeholder = "value";
-
-  deleteButton.addEventListener("click", (e) => {
-    if (container.children.length === 1) {
-      ke.value = "";
-      ve.value = "";
-      return;
-    }
-    container.children = container.children.filter(
-      (child) => child !== kvContainer
-    );
-    renderChildren(container);
-  });
-  ke.addEventListener("keyup", (e) => {
-    if ("Enter" === e.key) {
-      ve.focus();
-    }
-  });
-  ve.addEventListener("keyup", (e) => {
-    if ("Enter" === e.key) {
-      appendKeyValueInputChild(container);
-    }
-  });
-
-  kvContainer.appendChild(deleteButton);
-  kvContainer.appendChild(ke);
-  kvContainer.appendChild(ve);
-  container.children.push(kvContainer);
-
-  renderChildren(container);
-  ke.focus();
-};
-
-const renderChildren = (container) => {
-  container.target.replaceChildren(...container.children);
-};
-
-const renderResponse = (data, { statusCode, headers, body }) => {
+const renderResponse = (data) => {
   console.log(data);
 
-  statusCode.textContent = data.statusCode;
-  headers.textContent = JSON.stringify(data.headers, null, 2);
-  body.textContent = data.body;
+  container.responseCode.textContent = data.statusCode;
+  container.responseHeaders.textContent = JSON.stringify(data.headers, null, 2);
+  container.responseBody.textContent = data.body;
 
-  if (!statusCode.textContent && !header.textContent) {
-    body.textContent = JSON.stringify(data, null, 2);
+  if (
+    !container.responseCode.textContent &&
+    !container.responseHeaders.textContent
+  ) {
+    container.responseBody.textContent = JSON.stringify(data, null, 2);
   }
 };
 
 const handleFetchException = (e) => {
   console.error(e);
-  container.response.body.target.textContent = e;
+  container.responseBody.textContent = e;
 };
 
-const fetchViaProxy = (options) => {
-  fetch("/relay", { ...options, body: JSON.stringify(options.body) })
-    .then((res) => res.json())
-    .then((data) => {
-      renderResponse(data, {
-        statusCode: container.response.statusCode.target,
-        headers: container.response.header.target,
-        body: container.response.body.target,
-      });
-    })
-    .catch(handleFetchException);
-};
+const executeAPI = (payload) => {
+  console.log(payload);
+  saveLastRequest(payload);
 
-const fetchViaLocal = (options) => {
   const statusCode = {};
   const responseHeaders = {};
 
-  saveLastRequest(options.body);
+  const url = new URL(payload.url);
+  if (payload.params) {
+    for (const [key, values] of Object.entries(payload.params)) {
+      for (const value of values) {
+        url.searchParams.append(key, value);
+      }
+    }
+  }
 
-  fetch(options.body.url, {
-    method: options.body.method,
-    headers: { ...options.body.headers },
+  fetch(url, {
+    method: payload.method,
+    headers: { ...payload.headers },
+    body: payload.body,
   })
     .then((res) => {
       res.headers.forEach((v, k) => {
@@ -141,20 +57,13 @@ const fetchViaLocal = (options) => {
 
       return res.text();
     })
-    .then((data) => {
-      renderResponse(
-        {
-          statusCode: statusCode.value,
-          headers: responseHeaders,
-          body: data,
-        },
-        {
-          statusCode: container.response.statusCode.target,
-          headers: container.response.header.target,
-          body: container.response.body.target,
-        }
-      );
-    })
+    .then((data) =>
+      renderResponse({
+        statusCode: statusCode.value,
+        headers: responseHeaders,
+        body: data,
+      })
+    )
     .catch(handleFetchException);
 };
 
@@ -166,31 +75,23 @@ const loadRequest = (name) => JSON.parse(localStorage.getItem(name));
 const loadLastRequest = () => loadRequest(LAST_REQUEST_STORAGE_KEY);
 
 document.addEventListener("DOMContentLoaded", () => {
-  new KeyController(() => container.submit.target.click());
+  new KeyController(() => container.submit.click());
 
   const lastRequest = loadLastRequest();
   if (lastRequest) {
-    container.request.method.target.value = lastRequest.method;
-    container.request.url.target.value = lastRequest.url;
+    container.requestMethod.value = lastRequest.method;
+    container.requestURL.value = lastRequest.url;
 
-    if (lastRequest.headers) {
-      for (const [k, v] of Object.entries(lastRequest.headers)) {
-        appendKeyValueInputChild(container.request.header);
-        const children = container.request.header.children;
-        children[children.length - 1].children[1].value = v;
-      }
+    if (!!lastRequest.headers) {
+      container.requestHeaders.applyPairs(lastRequest.headers);
     }
 
-    if (lastRequest.params) {
-      for (const [k, v] of Object.entries(lastRequest.params)) {
-        appendKeyValueInputChild(container.request.param);
-        const children = container.request.param.children;
-        children[children.length - 1].children[1].value = v;
-      }
+    if (!!lastRequest.params) {
+      container.requestParams.applyPairs(lastRequest.params);
     }
 
     if (!!lastRequest.body) {
-      container.request.body.target.value = lastRequest.body;
+      container.requestBody.textContent = lastRequest.body
     }
   }
 
@@ -201,92 +102,53 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       return true;
     };
+
     const name = prompt(
       "name your api",
-      new Date().toISOString() + " " + container.request.url.target.value
+      new Date().toISOString() + " " + container.requestURL.value
     );
+
     const data = {
-      method: container.request.method.target.value,
-      url: container.request.url.target.value,
-      headers: {
-        ...Object.fromEntries(
-          container.request.header.children.map((child) => [
-            child.children[0].value,
-            child.children[1].value,
-          ])
-        ),
-      },
-      params: {
-        ...Object.fromEntries(
-          container.request.param.children.map((child) => [
-            child.children[0].value,
-            child.children[1].value,
-          ])
-        ),
-      },
-      body: container?.request?.body?.target?.value || null,
+      method: container.requestMethod.value,
+      url: container.requestURL.value,
+      headers: container.requestHeaders.extractPairs(),
+      params: container.requestParams.extractPairs(),
+      body: container.requestBody.value || null,
     };
 
-    shouldSave(name) && localStorage.setItem(name, JSON.stringify(data));
+    shouldSave(name) && saveRequest(name, data);
   });
 
-  container.submit.target.addEventListener("click", (e) => {
-    if (!container.request.url.target.value) {
+  container.submit.addEventListener("click", (e) => {
+    if (!container.requestURL.value) {
       return;
     }
 
-    const method = container.request.method.target.value || "GET";
+    const method = container.requestMethod.value || "GET";
     const url = (() => {
-      const inputValue = container.request.url.target.value;
+      const inputValue = container.requestURL.value;
       return inputValue.startsWith("http")
         ? inputValue
         : "http://" + inputValue;
     })();
 
-    const headers = {};
-    for (const child of container.request.header.children) {
-      const k = child.children[0].value;
-      const v = child.children[1].value;
+    const headers = container.requestHeaders.extractPairs();
+    const params = container.requestParams.extractPairs();
 
-      if (k && v) {
-        if (!headers[k]) {
-          headers[k] = [];
-        }
-        headers[k].push(v);
-      }
-    }
+    container.responseCode.textContent = "";
+    container.responseHeaders.textContent = "";
+    container.responseBody.textContent = "";
 
-    const queryParams = {};
-    for (const child of container.request.param.children) {
-      const k = child.children[0].value;
-      const v = child.children[1].value;
-
-      if (k && v) {
-        if (!headers[k]) {
-          queryParams[k] = [];
-        }
-        queryParams[k].push(v);
-      }
-    }
-
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: { method, url, headers, queryParams },
-    };
-
-    console.log(options.body);
-    container.response.statusCode.target.textContent = "";
-    container.response.header.target.textContent = "";
-    container.response.body.target.textContent = "";
-
-    fetchViaLocal(options);
+    executeAPI({
+      method,
+      url,
+      headers,
+      params,
+      body: container.requestBody.value || null,
+    });
   });
 
-  appendKeyValueInputChild(container.request.header);
-  appendKeyValueInputChild(container.request.param);
-
-  container.request.url.target.focus();
+  container.requestHeaders.appendChild();
+  container.requestParams.appendChild();
+  container.requestURL.focus();
 });
